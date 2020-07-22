@@ -37,8 +37,8 @@ def _main():
 
     for i in range(noofdocs_source):
         for j in range(noofdocs_target):
-            scores[(i,j)]=greedy_mover_distance(source_embed["embed"].copy(),target_embed["embed"],
-                                                source_embed["weight"].copy(),target_embed["weight"].copy())
+            scores[(i,j)]=greedy_mover_distance(source_embed[i]["embed"].copy(),target_embed[j]["embed"].copy(),
+                                                source_embed[i]["weight"].copy(),target_embed[j]["weight"].copy())
 
     sorted_scores= {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
     match=competitive_matching(sorted_scores)
