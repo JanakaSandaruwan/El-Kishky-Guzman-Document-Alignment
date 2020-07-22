@@ -1,7 +1,6 @@
 import json
 from greedy_mover_distance import greedy_mover_distance
 from competitive_matching import competitive_matching
-from weight_schema import *
 import argparse
 
 def _parse_args():
@@ -44,12 +43,7 @@ def _main():
     sorted_scores= {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
     match=competitive_matching(sorted_scores)
 
-    count=0.0
-    for pair in match:
-        if (pair[0]==pair[1]):
-            count+=1
-    print ("Matched document pairs percentace ",count*100/len(match))
-
+    print("Document Alignment -----------------------------------------------------------")
     print(match)
 
 if __name__ == '__main__':
