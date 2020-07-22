@@ -10,7 +10,8 @@ def _parse_args():
     parser.add_argument(dest='lang', help="language abbreviaion", type=str)
     parser.add_argument('-ex', '--existing_path',default="" ,help="path to existing embedding file", type=str)
     parser.add_argument('-n','--noofdocs', default=-1, help="no of documents to be embeded",type=int)
-    parser.add_argument('-w','--weight_schema',default="sent_len" ,help="path to existing embedding file", type=str)
+    parser.add_argument('-w','--weight_schema',default="sent_len" ,help="path to existing embedding file",
+                        choices=["sent_len","sent_freq","idf","slidf"])
     return parser.parse_args()
 
 def _main():

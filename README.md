@@ -10,7 +10,7 @@ For source document<br>
 For target document<br>
 ```python embedding_creator.py example/target.json ./example/te.json si```<br><br>
 
-Source and target documets should be in json format as follows. <br>
+Source and target documets should be in json format as follows.<br>
 [<br>
 &nbsp;&nbsp;&nbsp;&nbsp;{
         "content": "doc1"
@@ -22,6 +22,7 @@ Source and target documets should be in json format as follows. <br>
 
 ### Run docalign (using embeded documents)
 ```python main.py ./example/se.json ./example/te.json``` <br><br>
+
 optional params :<br>
 ```python main.py --help```<br>
 ```python embedding_creator.py --help```
