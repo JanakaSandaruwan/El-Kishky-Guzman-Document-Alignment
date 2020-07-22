@@ -2,142 +2,55 @@ import json
 from greedy_mover_distance import greedy_mover_distance
 from competitive_matching import competitive_matching
 from weight_schema import *
+import argparse
 
-file  = open('embedding.json', encoding='utf8')
-data = json.load(file)
+def _parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(dest='source_path', help="path to source embedding file",type=str)
+    parser.add_argument(dest='target_path', help="path to target embedding file", type=str)
+    parser.add_argument('-ns','--noofdocs_source', default=-1, help="no of documents to be aligned in source",type=int)
+    parser.add_argument('-nt','--noofdocs_target', default=-1, help="no of documents to be aligned in target",type=int)
+    return parser.parse_args()
 
-source_docs = []
-target_docs = []
-source_docs_weights=[]
-target_docs_weights=[]
+def _main():
+    args = _parse_args()
+    source_path= args.source_path
+    target_path= args.target_path
 
-source_docs_weights_sent_len=[]
-target_docs_weights_sent_len=[]
-source_docs_weights_sent_len_normalized=[]
-target_docs_weights_sent_len_normalized=[]
+    file  = open(source_path,encoding='utf8')
+    source_embed = json.load(file)
+    file.close()
 
-en_documents=[]
-si_documents=[]
+    file = open(target_path, encoding='utf8')
+    target_embed = json.load(file)
+    file.close()
 
-source_docs_weights_intra_doc_word_idf = []
-target_docs_weights_intra_doc_word_idf = []
+    noofdocs_source =len(source_embed)
+    noofdocs_target =len(target_embed)
 
-for docs in data:
-    doc_en = docs['content_en']
-    doc_si = docs['content_si']
+    if args.noofdocs_source != -1:
+        noofdocs_source=args.noofdocs_source
 
-    en_documents.append(doc_en)
-    si_documents.append(doc_si)
+    if args.noofdocs_target != -1:
+        noofdocs_target=args.noofdocs_target
 
-    # Get laser embedding
-    source_embedd = docs ['embed_en']
-    target_embedd = docs ['embed_si']
-    source_docs.append(source_embedd)
-    target_docs.append(target_embedd)
+    scores ={}
 
-    #get frequency weights
-    source_docs_weights.append(documentMassNormalization(get_sentence_frequency_list(source_embedd)))
-    target_docs_weights.append(documentMassNormalization(get_sentence_frequency_list(target_embedd)))
+    for i in range(noofdocs_source):
+        for j in range(noofdocs_target):
+            scores[(i,j)]=greedy_mover_distance(source_embed["embed"].copy(),target_embed["embed"],
+                                                source_embed["weight"].copy(),target_embed["weight"].copy())
 
-    #get sentence length weights
-    # en_weight= get_sentence_length_weighting_list(doc_en)
-    # si_weight = get_sentence_length_weighting_list(doc_si)
-    # source_docs_weights_sent_len.append(en_weight)
-    # target_docs_weights_sent_len.append(si_weight)
-    # source_docs_weights_sent_len_normalized.append(documentMassNormalization(en_weight))
-    # target_docs_weights_sent_len_normalized.append(documentMassNormalization(si_weight))
+    sorted_scores= {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
+    match=competitive_matching(sorted_scores)
 
-    source_docs_weights_sent_len_normalized.append(docs['weight_en'])
-    target_docs_weights_sent_len_normalized.append(docs['weight_si'])
+    count=0.0
+    for pair in match:
+        if (pair[0]==pair[1]):
+            count+=1
+    print ("Matched document pairs percentace ",count*100/len(match))
 
-scores ={}
+    print(match)
 
-for i in range(len(source_docs)):
-    for j in range(len(target_docs)):
-        scores[(i,j)]=greedy_mover_distance(source_docs[i].copy(),target_docs[j].copy(),source_docs_weights[i].copy()
-                                            ,target_docs_weights[j].copy())
-
-
-sorted_scores= {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
-match=competitive_matching(sorted_scores)
-
-
-count=0.0
-for pair in match:
-    if (pair[0]==pair[1]):
-        count+=1
-print ("Matched document pairs for sentence frequency ",count*100/len(match))
-
-scores ={}
-
-for i in range(len(source_docs)):
-    for j in range(len(target_docs)):
-        scores[(i,j)]=greedy_mover_distance(source_docs[i],target_docs[j],source_docs_weights_sent_len_normalized[i].copy()
-                                            ,target_docs_weights_sent_len_normalized[j].copy())
-
-sorted_scores= {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
-match=competitive_matching(sorted_scores)
-
-count=0.0
-for pair in match:
-    if (pair[0]==pair[1]):
-        count+=1
-print ("Matched document pairs for sentence length ",count*100/len(match))
-
-
-sentence_count_en= sentence_count_web_domain(en_documents)
-sentence_count_si= sentence_count_web_domain(si_documents)
-N_en=len(en_documents)
-N_si=len(si_documents)
-source_docs_weights_idf=[]
-target_docs_weights_idf=[]
-
-source_docs_weights_idf_normalized=[]
-target_docs_weights_idf_normalized=[]
-
-for doc in en_documents:
-    weight_doc= get_idf_weighting_list(doc,sentence_count_en,N_en)
-    source_docs_weights_idf.append(weight_doc)
-    source_docs_weights_idf_normalized.append(documentMassNormalization(weight_doc))
-
-for doc in si_documents:
-    weight_doc=get_idf_weighting_list(doc,sentence_count_si,N_si)
-    target_docs_weights_idf.append(weight_doc)
-    target_docs_weights_idf_normalized.append(documentMassNormalization(weight_doc))
-
-scores ={}
-
-for i in range(len(source_docs)):
-    for j in range(len(target_docs)):
-        scores[(i,j)]=greedy_mover_distance(source_docs[i],target_docs[j],source_docs_weights_idf_normalized[i].copy()
-                                            ,target_docs_weights_idf_normalized[j].copy())
-
-sorted_scores= {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
-match=competitive_matching(sorted_scores)
-
-count=0.0
-for pair in match:
-    if (pair[0]==pair[1]):
-        count+=1
-print ("Matched document pairs for idf weighting",count*100/len(match))
-
-source_docs_slidf_weight= get_slidf_weighting_list(source_docs_weights_sent_len.copy()
-                                                                             ,source_docs_weights_idf.copy())
-target_docs_slidf_weight= get_slidf_weighting_list(target_docs_weights_sent_len.copy()
-                                                                             ,target_docs_weights_idf.copy())
-
-scores ={}
-
-for i in range(len(source_docs)):
-    for j in range(len(target_docs)):
-        scores[(i,j)]=greedy_mover_distance(source_docs[i],target_docs[j],source_docs_slidf_weight[i].copy()
-                                            ,target_docs_slidf_weight[j].copy())
-
-sorted_scores= {k: v for k, v in sorted(scores.items(), key=lambda item: item[1])}
-match=competitive_matching(sorted_scores)
-
-count=0.0
-for pair in match:
-    if (pair[0]==pair[1]):
-        count+=1
-print ("Matched document pairs for slidf weighting",count*100/len(match))
+if __name__ == '__main__':
+    _main()

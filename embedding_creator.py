@@ -1,119 +1,143 @@
 import json
-from laserembedder import get_embeddig_list
+from laser_embedder import get_embeddig_list
 from datetime import datetime
 from weight_schema import *
+import argparse
 
-file  = open('docalign/data/army_parallel_new.json',encoding='utf8')
-data = json.load(file)
+def _parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(dest='input_path', help="path to data file",type=str)
+    parser.add_argument(dest='output_path', help="path to embeding file", type=str)
+    parser.add_argument('-ex', '--existing_path',default="" ,help="path to existing embedding file", type=str)
+    parser.add_argument('-n','--noofdocs', default=-1, help="no of documents to be embeded",type=int)
+    parser.add_argument('-w','--weight_schema',default="sent_len" ,help="path to existing embedding file", type=str)
+    return parser.parse_args()
 
-try:
-    file  = open('embedding.json', encoding='utf8')
-    embed_data = json.load(file)
-except:
-    embed_data =[]
+def _main():
+    args = _parse_args()
+    input_path = args.input_path
+    output_path = args.output_path
 
+    file = open(input_path, encoding='utf8')
+    data = json.load(file)
 
-source_docs = []
-target_docs = []
-source_docs_weights=[]
-target_docs_weights=[]
+    noofdocs = len(data)
+    if args.noofdocs != -1:
+        noofdocs = args.noofdocs
 
-source_docs_weights_sent_len=[]
-target_docs_weights_sent_len=[]
-source_docs_weights_sent_len_normalized=[]
-target_docs_weights_sent_len_normalized=[]
-
-en_documents=[]
-si_documents=[]
-
-source_docs_weights_intra_doc_word_idf = []
-target_docs_weights_intra_doc_word_idf = []
-
-source_digits = []
-target_digits = []
-
-source_names = []
-source_designations = []
-
-i=0
-start=datetime.now()
-for docs in data:
-    i+=1
-    print(i)
-    doc_en = docs['content_en']
-    doc_si = docs['content_si']
-
-    en_documents.append(doc_en)
-    si_documents.append(doc_si)
+    existing_path = args.existing_path
+    try:
+        file = open(existing_path, encoding='utf8')
+        embed_data = json.load(file)
+    except:
+        embed_data = []
 
 
-    #get frequency weights
-    # source_docs_weights.append(documentMassNormalization(get_sentence_frequency_list(doc_en, "en")))
-    # target_docs_weights.append(documentMassNormalization(get_sentence_frequency_list(doc_si, "si")))
+    source_docs = []
+    target_docs = []
+    source_docs_weights=[]
+    target_docs_weights=[]
 
-    #get sentence length weights
-    en_weight= get_sentence_length_weighting_list(doc_en, "en")
-    si_weight = get_sentence_length_weighting_list(doc_si, "si")
-    source_docs_weights_sent_len.append(en_weight)
-    target_docs_weights_sent_len.append(si_weight)
-    source_docs_weights_sent_len_normalized.append(documentMassNormalization(en_weight))
-    target_docs_weights_sent_len_normalized.append(documentMassNormalization(si_weight))
+    source_docs_weights_sent_len=[]
+    target_docs_weights_sent_len=[]
+    source_docs_weights_sent_len_normalized=[]
+    target_docs_weights_sent_len_normalized=[]
 
+    en_documents=[]
+    si_documents=[]
 
-sentence_count_en= sentence_count_web_domain(en_documents,'en')
-sentence_count_si= sentence_count_web_domain(si_documents,'si')
-N_en=len(en_documents)
-N_si=len(si_documents)
-source_docs_weights_idf=[]
-target_docs_weights_idf=[]
+    source_docs_weights_intra_doc_word_idf = []
+    target_docs_weights_intra_doc_word_idf = []
 
-source_docs_weights_idf_normalized=[]
-target_docs_weights_idf_normalized=[]
+    source_digits = []
+    target_digits = []
 
-for doc in en_documents:
-    weight_doc= get_idf_weighting_list(doc,sentence_count_en,N_en,'en')
-    source_docs_weights_idf.append(weight_doc)
-    source_docs_weights_idf_normalized.append(documentMassNormalization(weight_doc))
+    source_names = []
+    source_designations = []
 
-for doc in si_documents:
-    weight_doc=get_idf_weighting_list(doc,sentence_count_si,N_si,'si')
-    target_docs_weights_idf.append(weight_doc)
-    target_docs_weights_idf_normalized.append(documentMassNormalization(weight_doc))
-
-source_docs_slidf_weight= get_slidf_weighting_list(source_docs_weights_sent_len.copy()
-                                                                             ,source_docs_weights_idf.copy())
-target_docs_slidf_weight= get_slidf_weighting_list(target_docs_weights_sent_len.copy()
-                                                                             ,target_docs_weights_idf.copy())
-
-parallel =[]
-count = 0
-
-
-for docs in data:
-    a ={}
-    if count < len(embed_data):
-        a = embed_data[count]
-        a['weight_en'] = source_docs_weights_intra_doc_word_idf[count]
-        a['weight_si'] = source_docs_weights_intra_doc_word_idf[count]
-        print("cc",count)
-        count += 1
-    else:
-        a = docs
+    i=0
+    start=datetime.now()
+    for docs in data[:noofdocs]:
+        i+=1
+        print(i)
         doc_en = docs['content_en']
         doc_si = docs['content_si']
-        # print(doc_en)
-        # Get laser embedding
-        source_embedd = get_embeddig_list(doc_en,lang='en')
-        target_embedd = get_embeddig_list(doc_si,lang='si')
-        a ['embed_si'] = target_embedd
-        a ['embed_en'] = source_embedd
-        a ['weight_en'] = source_docs_slidf_weight[count]
-        a ['weight_si'] = target_docs_slidf_weight[count]
-        count += 1
-        print(count)
 
-    parallel.append(a)
+        en_documents.append(doc_en)
+        si_documents.append(doc_si)
 
-if len(parallel) > 0 :
-    with open("embedding.json", 'w', encoding="utf8") as outfile:
-        json.dump(parallel, outfile, ensure_ascii=False)
+
+        #get frequency weights
+        # source_docs_weights.append(documentMassNormalization(get_sentence_frequency_list(doc_en, "en")))
+        # target_docs_weights.append(documentMassNormalization(get_sentence_frequency_list(doc_si, "si")))
+
+        #get sentence length weights
+        en_weight= get_sentence_length_weighting_list(doc_en, "en")
+        si_weight = get_sentence_length_weighting_list(doc_si, "si")
+        source_docs_weights_sent_len.append(en_weight)
+        target_docs_weights_sent_len.append(si_weight)
+        source_docs_weights_sent_len_normalized.append(documentMassNormalization(en_weight))
+        target_docs_weights_sent_len_normalized.append(documentMassNormalization(si_weight))
+
+
+    sentence_count_en= sentence_count_web_domain(en_documents,'en')
+    sentence_count_si= sentence_count_web_domain(si_documents,'si')
+    N_en=len(en_documents)
+    N_si=len(si_documents)
+    source_docs_weights_idf=[]
+    target_docs_weights_idf=[]
+
+    source_docs_weights_idf_normalized=[]
+    target_docs_weights_idf_normalized=[]
+
+    for doc in en_documents:
+        weight_doc= get_idf_weighting_list(doc,sentence_count_en,N_en,'en')
+        source_docs_weights_idf.append(weight_doc)
+        source_docs_weights_idf_normalized.append(documentMassNormalization(weight_doc))
+
+    for doc in si_documents:
+        weight_doc=get_idf_weighting_list(doc,sentence_count_si,N_si,'si')
+        target_docs_weights_idf.append(weight_doc)
+        target_docs_weights_idf_normalized.append(documentMassNormalization(weight_doc))
+
+    source_docs_slidf_weight= get_slidf_weighting_list(source_docs_weights_sent_len.copy()
+                                                                                 ,source_docs_weights_idf.copy())
+    target_docs_slidf_weight= get_slidf_weighting_list(target_docs_weights_sent_len.copy()
+                                                                                 ,target_docs_weights_idf.copy())
+
+    parallel =[]
+    count = 0
+
+
+    for docs in data:
+        a ={}
+        if count < len(embed_data):
+            a = embed_data[count]
+            a['weight_en'] = source_docs_weights_intra_doc_word_idf[count]
+            a['weight_si'] = source_docs_weights_intra_doc_word_idf[count]
+            print("cc",count)
+            count += 1
+        else:
+            a = docs
+            doc_en = docs['content_en']
+            doc_si = docs['content_si']
+            # print(doc_en)
+            # Get laser embedding
+            source_embedd = get_embeddig_list(doc_en,lang='en')
+            target_embedd = get_embeddig_list(doc_si,lang='si')
+            a ['embed_si'] = target_embedd
+            a ['embed_en'] = source_embedd
+            a ['weight_en'] = source_docs_slidf_weight[count]
+            a ['weight_si'] = target_docs_slidf_weight[count]
+            count += 1
+            print(count)
+
+        parallel.append(a)
+
+    if len(parallel) > 0 :
+        with open(output_path, 'w', encoding="utf8") as outfile:
+            json.dump(parallel, outfile, ensure_ascii=False)
+
+
+if __name__ == '__main__':
+    _main()
