@@ -1,8 +1,8 @@
 # docalign
 
-This package reproduces the algorithm described by El-Kishky and Guzmán (2020)[1] to align massively multilingual document with cross-lingual Sentence-Mover’s Distance.
-The code in this repository is focused on aligning English and Sinhala document pairs, but it can also be used with any other language pair with a few code level changes.
-<a href="https://github.com/facebookresearch/LASER">LASER PROJECT</a> is used to get sentence embeddings as descibed in the original paper.
+This package reproduces the algorithm described by El-Kishky and Guzmán (2020)[1] to align massively multilingual document with cross-lingual Sentence-Mover’s Distance.<br>
+The code in this repository is focused on aligning English and Sinhala document pairs, but it can also be used with any other language pair with a few code level changes.<br>
+<a href="https://github.com/facebookresearch/LASER">LASER PROJECT</a> is used to get sentence embeddings as described in the original paper.
 
 ### Build docalign
 ```pip install -r requirements.txt```<br>
