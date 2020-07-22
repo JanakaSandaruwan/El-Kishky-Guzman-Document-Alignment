@@ -1,6 +1,5 @@
 argtest==1.2.4
 sentence-splitter==1.4
 numpy==1.16.5
-sinling==0.0.1
 json5==0.8.5
 laserembeddings==1.0.1
