@@ -5,7 +5,7 @@ The code in this repository is focused on aligning English and Sinhala document 
 <a href="https://github.com/facebookresearch/LASER">LASER PROJECT</a> is used to get sentence embeddings as described in the original paper.
 
 ### Build docalign
-Install the python3 with pip3
+Install the python3 with pip3<br>
 ```pip install -r requirements.txt```<br>
 Install <a href="https://github.com/ysenarath/sinling">sinling</a><br>
 
